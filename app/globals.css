@@ -1,0 +1,110 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+/* ─── Design System Tokens ─────────────────────────────────────────────── */
+:root {
+  --color-bg:          #EEEEEE;
+  --color-fg:          #1A1A1A;
+  --color-accent:      #DB1A1A;
+  --color-accent-alt:  #BD114A;
+  --font-primary:      'Inter', system-ui, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-bg);
+  color:            var(--color-fg);
+  font-family:      var(--font-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+}
+
+/* ─── Scrollbar Styling ───────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(26,26,26,0.05);
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(219,26,26,0.35);
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #DB1A1A;
+}
+
+/* ─── Selection Color ─────────────────────────────────────────────────── */
+::selection {
+  background: rgba(219,26,26,0.2);
+  color: #1A1A1A;
+}
+
+/* ─── Focus Ring ──────────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid #DB1A1A;
+  outline-offset: 2px;
+}
+
+/* ─── Smooth Transition Defaults ──────────────────────────────────────── */
+button, select, a {
+  transition: all 0.2s ease;
+}
+
+select option {
+  background: #EEEEEE;
+  color: #1A1A1A;
+}
+
+/* Scroll reveal and loading shimmer */
+.reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(18px) scale(0.99);
+  transition: opacity 560ms ease, transform 560ms ease;
+  will-change: opacity, transform;
+}
+
+.reveal-on-scroll.is-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.skeleton-shimmer {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(
+    90deg,
+    rgba(26,26,26,0.07) 0%,
+    rgba(26,26,26,0.13) 48%,
+    rgba(26,26,26,0.07) 100%
+  );
+  background-size: 240% 100%;
+  animation: shimmer 1.2s linear infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 120% 0;
+  }
+  100% {
+    background-position: -120% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal-on-scroll {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .skeleton-shimmer {
+    animation: none;
+  }
+}
