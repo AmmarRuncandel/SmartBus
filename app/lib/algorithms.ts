@@ -25,6 +25,12 @@ export interface AlgorithmResult {
   nodesVisited: number;
   /** Step-by-step log of node expansions for visualization */
   expansionLog: { node: NodeId; gCost: number; fCost?: number }[];
+  /**
+   * Peak size of the priority queue (frontier) at any point during execution.
+   * Represents the maximum memory allocated for the open list —
+   * a direct proxy for the algorithm's space complexity in practice.
+   */
+  maxQueueSize: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -104,6 +110,7 @@ export function runUCS(
   const visited = new Set<NodeId>();
   const expansionLog: AlgorithmResult['expansionLog'] = [];
   let nodesVisited = 0;
+  let maxQueueSize = 1; // starts at 1 after first enqueue
 
   while (pq.size > 0) {
     const item = pq.dequeue()!;
@@ -116,7 +123,7 @@ export function runUCS(
 
     if (node === goal) {
       const executionTime = performance.now() - t0;
-      return { path, totalCost: cost, executionTime, nodesVisited, expansionLog };
+      return { path, totalCost: cost, executionTime, nodesVisited, expansionLog, maxQueueSize };
     }
 
     for (const edge of graph[node].edges) {
@@ -126,13 +133,15 @@ export function runUCS(
           { node: edge.to, path: [...path, edge.to], cost: newCost },
           newCost
         );
+        // Track peak queue size after every enqueue
+        maxQueueSize = Math.max(maxQueueSize, pq.size);
       }
     }
   }
 
   // No path found
   const executionTime = performance.now() - t0;
-  return { path: [], totalCost: Infinity, executionTime, nodesVisited, expansionLog };
+  return { path: [], totalCost: Infinity, executionTime, nodesVisited, expansionLog, maxQueueSize };
 }
 
 // ---------------------------------------------------------------------------
@@ -161,6 +170,7 @@ export function runAStar(
 
   const expansionLog: AlgorithmResult['expansionLog'] = [];
   let nodesVisited = 0;
+  let maxQueueSize = 1; // starts at 1 after first enqueue
 
   while (pq.size > 0) {
     const item = pq.dequeue()!;
@@ -174,7 +184,7 @@ export function runAStar(
 
     if (node === goal) {
       const executionTime = performance.now() - t0;
-      return { path, totalCost: gCost, executionTime, nodesVisited, expansionLog };
+      return { path, totalCost: gCost, executionTime, nodesVisited, expansionLog, maxQueueSize };
     }
 
     for (const edge of graph[node].edges) {
@@ -185,11 +195,13 @@ export function runAStar(
         gScores.set(edge.to, newG);
         const fCost = newG + graph[edge.to].h;
         pq.enqueue({ node: edge.to, path: [...path, edge.to], gCost: newG }, fCost);
+        // Track peak queue size after every enqueue
+        maxQueueSize = Math.max(maxQueueSize, pq.size);
       }
     }
   }
 
   // No path found
   const executionTime = performance.now() - t0;
-  return { path: [], totalCost: Infinity, executionTime, nodesVisited, expansionLog };
+  return { path: [], totalCost: Infinity, executionTime, nodesVisited, expansionLog, maxQueueSize };
 }

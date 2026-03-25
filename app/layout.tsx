@@ -14,6 +14,10 @@ export const metadata: Metadata = {
   description:
     'A comparative simulation of A* and Uniform Cost Search (UCS) algorithms for finding the most optimal inter-city bus route across West Java and Jakarta terminals.',
   keywords: ['A* algorithm', 'UCS', 'bus route', 'pathfinding', 'algorithm simulation'],
+  icons: {
+    icon: '/images/SmartBus.png',
+    apple: '/images/SmartBus.png',
+  },
 };
 
 export default function RootLayout({

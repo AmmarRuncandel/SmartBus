@@ -3,11 +3,22 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Bus, LayoutDashboard, Map } from 'lucide-react';
+import Image from 'next/image';
+import { LayoutDashboard, Map } from 'lucide-react';
 
 export default function Navbar() {
   const pathname = usePathname();
   const [isHidden, setIsHidden] = useState(false);
+
+  // Jika klik logo/nama saat sudah di halaman utama → paksa reload + scroll atas
+  const handleLogoClick = (e: React.MouseEvent) => {
+    if (pathname === '/') {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      // Setelah scroll selesai, reload halaman untuk mereset state simulasi
+      setTimeout(() => { window.location.href = '/'; }, 300);
+    }
+  };
 
   useEffect(() => {
     let lastY = window.scrollY;
@@ -47,13 +58,20 @@ export default function Navbar() {
         boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
       }}
     >
-      {/* Logo + Nama Aplikasi — klik kembali ke beranda */}
-      <Link href="/" className="flex items-center gap-3">
+      {/* Logo + Nama Aplikasi */}
+      <Link href="/" onClick={handleLogoClick} className="flex items-center gap-3">
         <div
-          className="flex items-center justify-center w-10 h-10 rounded-xl"
-          style={{ background: 'linear-gradient(135deg, #DB1A1A, #BD114A)' }}
+          className="flex items-center justify-center w-10 h-10 rounded-xl overflow-hidden"
+          style={{ background: '#EEEEEE' }}
         >
-          <Bus size={20} color="#EEEEEE" strokeWidth={2} />
+          <Image
+            src="/images/SmartBus.png"
+            alt="SmartBus Logo"
+            width={40}
+            height={40}
+            className="w-full h-full object-contain"
+            priority
+          />
         </div>
         <div>
           <h1
