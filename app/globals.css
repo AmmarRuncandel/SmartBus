@@ -75,6 +75,48 @@ select option {
   transform: translateY(0) scale(1);
 }
 
+/* Pop-fade: masuk dari bawah dengan sedikit scale-up */
+.pop-fade {
+  opacity: 0;
+  transform: translateY(24px) scale(0.97);
+  transition: opacity 480ms cubic-bezier(0.22, 1, 0.36, 1),
+              transform 480ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+
+.pop-fade.is-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+/* Fade slide up ringan untuk baris tabel / item list */
+.fade-slide-up {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 350ms ease, transform 350ms ease;
+}
+
+.fade-slide-up.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Animasi stagger untuk tbody rows tabel */
+@keyframes rowEnter {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.table-row-animate {
+  animation: rowEnter 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 .skeleton-shimmer {
   position: relative;
   overflow: hidden;
