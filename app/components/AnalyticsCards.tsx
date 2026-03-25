@@ -44,7 +44,7 @@ function interpretasiJarak(km: number): string {
 function interpretasiSimpul(n: number, total: number): string {
   const persen = Math.round((n / total) * 100);
   if (persen <= 40)
-    return `Hanya ${n} dari ${total} simpul — pencarian sangat terarah`;
+    return `Hanya ${n} dari ${total} simpul pencarian sangat terarah`;
   if (persen <= 70)
     return `${n} dari ${total} simpul dievaluasi secara efisiensi sedang`;
   return `${n} dari ${total} simpul dievaluasi secara pencarian menyeluruh`;
@@ -62,8 +62,8 @@ function interpretasiMemori(maxQ: number, totalSimpul: number): string {
   if (maxQ <= 2)
     return 'Penggunaan memori sangat rendah — frontier hampir tidak berkembang';
   if (persen <= 50)
-    return `Puncak antrian ${maxQ} item (${persen}% simpul) — penggunaan memori efisien`;
-  return `Puncak antrian ${maxQ} item (${persen}% simpul) — frontier tumbuh signifikan`;
+    return `Puncak antrian ${maxQ} item (${persen}% simpul) penggunaan memori efisien`;
+  return `Puncak antrian ${maxQ} item (${persen}% simpul) frontier tumbuh signifikan`;
 }
 
 // ---------------------------------------------------------------------------
