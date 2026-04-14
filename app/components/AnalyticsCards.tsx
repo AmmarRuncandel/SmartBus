@@ -16,6 +16,7 @@ import {
   Layers,
 } from 'lucide-react';
 import { AlgorithmResult } from '../lib/algorithms';
+import { formatDuration } from '../lib/benchmark';
 import { terminals } from '../lib/graphData';
 
 interface AnalyticsCardsProps {
@@ -305,7 +306,7 @@ function KartuAlgoritma({
         <BarisMedtrik
           icon={<Clock size={14} color={color} />}
           label="Waktu Eksekusi"
-          nilai={result ? `${result.executionTime.toFixed(4)} ms` : '—'}
+          nilai={result ? formatDuration(result.executionTime) : '—'}
           interpretasi={result ? interpretasiWaktu(result.executionTime) : undefined}
           hasResult={!!result} color={color}
         />

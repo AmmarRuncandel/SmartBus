@@ -1,7 +1,7 @@
 'use client';
 
 import { Sigma, GitCompareArrows, CheckCircle2 } from 'lucide-react';
-import { BenchmarkResult } from '../lib/benchmark';
+import { BenchmarkResult, formatDuration } from '../lib/benchmark';
 
 interface BenchmarkSummaryProps {
   astar: BenchmarkResult;
@@ -62,6 +62,10 @@ export default function BenchmarkSummary({ astar, ucs }: BenchmarkSummaryProps) 
           median lebih representatif daripada satu kali pengukuran karena mengurangi pengaruh noise runtime.
         </p>
       </div>
+
+      <p className="text-[11px] mt-3" style={{ color: 'rgba(26,26,26,0.45)' }}>
+        Warm-up: {astar.warmupRuns} run per algoritma sebelum {astar.runs} run pengukuran.
+      </p>
     </section>
   );
 }
@@ -102,10 +106,10 @@ function BenchmarkCard({
       </div>
 
       <div className="p-4 grid grid-cols-2 gap-3">
-        <BenchmarkMetric label="Median" value={`${result.executionTime.median.toFixed(4)} ms`} color={color} />
-        <BenchmarkMetric label="Std Dev" value={`${result.executionTime.stdDev.toFixed(4)} ms`} color={color} />
-        <BenchmarkMetric label="Mean" value={`${result.executionTime.mean.toFixed(4)} ms`} color={color} />
-        <BenchmarkMetric label="Range" value={`${result.executionTime.min.toFixed(4)} - ${result.executionTime.max.toFixed(4)} ms`} color={color} />
+        <BenchmarkMetric label="Median" value={formatDuration(result.executionTime.median)} color={color} />
+        <BenchmarkMetric label="Std Dev" value={formatDuration(result.executionTime.stdDev)} color={color} />
+        <BenchmarkMetric label="Mean" value={formatDuration(result.executionTime.mean)} color={color} />
+        <BenchmarkMetric label="Range" value={`${formatDuration(result.executionTime.min)} - ${formatDuration(result.executionTime.max)}`} color={color} />
       </div>
 
       <div className="px-4 pb-4 space-y-2">

@@ -118,7 +118,7 @@ Arsitektur mengikuti Next.js App Router dengan pemisahan sederhana antara UI, lo
 - Dashboard simulasi interaktif.
 - Pemilihan terminal asal dan tujuan.
 - Eksekusi A* dan UCS secara berdampingan.
-- Mode benchmark multi-run untuk menampilkan median, deviasi standar, mean, dan rentang waktu eksekusi.
+- Mode benchmark multi-run (jumlah run dapat dipilih) untuk menampilkan median, deviasi standar, mean, dan rentang waktu eksekusi.
 - Visualisasi jalur terbaik per algoritma.
 - Log urutan ekspansi simpul.
 - Kartu analitik (waktu, biaya, simpul dievaluasi, puncak antrian).
@@ -140,6 +140,24 @@ Arsitektur mengikuti Next.js App Router dengan pemisahan sederhana antara UI, lo
 	 - urutan ekspansi simpul,
 	 - puncak ukuran antrian prioritas.
 7. Pengguna dapat membuka halaman Peta Rute untuk melihat sorotan jalur pada graf SVG.
+
+## Interpretasi Waktu Eksekusi
+
+Nilai waktu eksekusi pada dashboard berasal dari pengukuran runtime aktual di browser (`performance.now`) untuk setiap eksekusi algoritma. Karena ukuran graf SmartBus relatif kecil, banyak proses selesai dalam waktu sub-millisecond sehingga perbedaan antar run sangat sensitif terhadap kondisi runtime (JIT compilation, event loop, beban tab, dan scheduler sistem operasi).
+
+Implikasinya:
+
+- pada single-run, A* dan UCS dapat saling bergantian terlihat lebih cepat,
+- nilai dapat tampil sangat kecil tetapi tetap ditampilkan dalam satuan milidetik (`ms`) dengan presisi lebih tinggi,
+- dan perbedaan kecil bukan selalu indikasi keunggulan algoritma yang konsisten.
+
+Untuk mengurangi bias tersebut, mode benchmark multi-run memakai warm-up terlebih dahulu sebelum run pengukuran, lalu menampilkan metrik agregat (median, mean, deviasi standar, dan rentang). Dalam praktik analisis, median lebih direkomendasikan dibanding satu angka single-run.
+
+Catatan perilaku UI:
+
+- hasil benchmark hanya muncul setelah tombol benchmark dijalankan,
+- hasil benchmark tetap dipertahankan ketika pengguna menjalankan simulasi biasa,
+- hasil benchmark dibersihkan saat pengguna menekan tombol reset.
 
 ## Detail Algoritma
 

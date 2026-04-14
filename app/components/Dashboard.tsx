@@ -25,6 +25,8 @@ interface HasilBenchmark {
 export default function Dashboard() {
   const [start, setStart] = useState<NodeId>('Tasikmalaya');
   const [destination, setDestination] = useState<NodeId>('Jakarta');
+  const [visualizationMode, setVisualizationMode] = useState<'comparison' | 'merged'>('comparison');
+  const [benchmarkRuns, setBenchmarkRuns] = useState(25);
   const [hasil, setHasil] = useState<HasilSimulasi | null>(null);
   const [hasilBenchmark, setHasilBenchmark] = useState<HasilBenchmark | null>(null);
   const [sedangBerjalan, setSedangBerjalan] = useState(false);
@@ -44,10 +46,13 @@ export default function Dashboard() {
 
     setSedangBerjalan(true);
     setHasil(null);
-    setHasilBenchmark(null);
 
     // Jeda singkat agar animasi loading terlihat
     await new Promise((r) => setTimeout(r, 300));
+
+    // Warm-up ringan untuk mengurangi bias JIT pada pengukuran satu kali run
+    runAStar(graph, start, destination);
+    runUCS(graph, start, destination);
 
     const astar = runAStar(graph, start, destination);
     const ucs = runUCS(graph, start, destination);
@@ -60,18 +65,16 @@ export default function Dashboard() {
     if (start === destination) return;
 
     setSedangBenchmark(true);
-    setHasil(null);
     setHasilBenchmark(null);
 
     await new Promise((resolve) => setTimeout(resolve, 150));
 
-    const runs = 25;
-    const astar = benchmarkAlgorithm(() => runAStar(graph, start, destination), runs);
-    const ucs = benchmarkAlgorithm(() => runUCS(graph, start, destination), runs);
+    const astar = benchmarkAlgorithm(() => runAStar(graph, start, destination), benchmarkRuns);
+    const ucs = benchmarkAlgorithm(() => runUCS(graph, start, destination), benchmarkRuns);
 
-    setHasilBenchmark({ astar, ucs, runs });
+    setHasilBenchmark({ astar, ucs, runs: benchmarkRuns });
     setSedangBenchmark(false);
-  }, [start, destination]);
+  }, [benchmarkRuns, start, destination]);
 
   const aturUlang = useCallback(() => {
     setHasil(null);
@@ -119,12 +122,16 @@ export default function Dashboard() {
             <ControlPanel
               start={start}
               destination={destination}
+              visualizationMode={visualizationMode}
               isLoading={sedangBerjalan}
               isBenchmarking={sedangBenchmark}
+              benchmarkRuns={benchmarkRuns}
               onStartChange={setStart}
               onDestinationChange={setDestination}
+              onVisualizationModeChange={setVisualizationMode}
               onRun={jalankanSimulasi}
               onBenchmark={jalankanBenchmark}
+              onBenchmarkRunsChange={setBenchmarkRuns}
               onReset={aturUlang}
             />
           </ScrollReveal>
@@ -196,6 +203,7 @@ export default function Dashboard() {
                 ucs={hasil?.ucs ?? null}
                 start={start}
                 destination={destination}
+                mode={visualizationMode}
               />
             </div>
           </ScrollReveal>

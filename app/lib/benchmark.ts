@@ -11,12 +11,20 @@ export interface NumericSummary {
 
 export interface BenchmarkResult {
   runs: number;
+  warmupRuns: number;
   executionTime: NumericSummary;
   nodesVisited: NumericSummary;
   totalCost: NumericSummary;
   maxQueueSize: NumericSummary;
   pathLength: NumericSummary;
   stablePath: boolean;
+}
+
+export function formatDuration(ms: number): string {
+  if (ms < 1) {
+    return `${ms.toFixed(6)} ms`;
+  }
+  return `${ms.toFixed(4)} ms`;
 }
 
 function summarize(values: number[]): NumericSummary {
@@ -48,9 +56,18 @@ function summarize(values: number[]): NumericSummary {
 export function benchmarkAlgorithm(
   runner: () => AlgorithmResult,
   runs = 25,
+  warmupRuns = 5,
 ): BenchmarkResult {
   if (runs <= 0) {
     throw new Error('Benchmark runs must be greater than zero.');
+  }
+
+  if (warmupRuns < 0) {
+    throw new Error('Benchmark warmup runs cannot be negative.');
+  }
+
+  for (let i = 0; i < warmupRuns; i++) {
+    runner();
   }
 
   const results = Array.from({ length: runs }, () => runner());
@@ -58,6 +75,7 @@ export function benchmarkAlgorithm(
 
   return {
     runs,
+    warmupRuns,
     executionTime: summarize(results.map((result) => result.executionTime)),
     nodesVisited: summarize(results.map((result) => result.nodesVisited)),
     totalCost: summarize(results.map((result) => result.totalCost)),
