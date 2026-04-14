@@ -11,6 +11,7 @@ interface TerminalSelectProps {
   excludeValue?: string;
   onChange: (val: string) => void;
   accentColor: string;
+  getOptionLabel?: (value: string) => string;
 }
 
 export default function TerminalSelect({
@@ -21,6 +22,7 @@ export default function TerminalSelect({
   excludeValue,
   onChange,
   accentColor,
+  getOptionLabel,
 }: TerminalSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -79,7 +81,7 @@ export default function TerminalSelect({
           color={accentColor}
           className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
         />
-        <span>{value}</span>
+        <span>{getOptionLabel ? getOptionLabel(value) : value}</span>
         <ChevronDown
           size={14}
           className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none transition-transform"
@@ -103,6 +105,7 @@ export default function TerminalSelect({
         >
           {filteredOptions.map((option) => {
             const isSelected = option === value;
+            const optionLabel = getOptionLabel ? getOptionLabel(option) : option;
 
             return (
               <li key={option} role="option" aria-selected={isSelected}>
@@ -118,7 +121,7 @@ export default function TerminalSelect({
                     background: isSelected ? `${accentColor}20` : 'transparent',
                   }}
                 >
-                  <span>{option}</span>
+                    <span>{optionLabel}</span>
                   {isSelected && (
                     <span
                       className="w-1.5 h-1.5 rounded-full"

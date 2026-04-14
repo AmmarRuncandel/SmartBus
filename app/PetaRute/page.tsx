@@ -14,24 +14,37 @@ import {
   ArrowRight,
   Network,
 } from 'lucide-react';
-import { graph, NodeId, terminals } from '../lib/graphData';
+import { graph, NodeId, terminals, getTerminalLabel } from '../lib/graphData';
 import { runAStar, runUCS } from '../lib/algorithms';
 import TerminalSelect from '../components/ControlPanel/TerminalSelect';
 import ScrollReveal from '../components/ui/ScrollReveal';
 
 // ---------------------------------------------------------------------------
-// Koordinat simpul dalam kanvas SVG (viewBox 1000×520)
+// Koordinat simpul dalam kanvas SVG (viewBox 1000x520)
 // ---------------------------------------------------------------------------
-const POSISI_SIMPUL: Record<NodeId, { x: number; y: number }> = {
-  Tasikmalaya: { x: 8,  y: 68 },
-  Garut:       { x: 22, y: 55 },
-  Bandung:     { x: 38, y: 44 },
-  Sumedang:    { x: 47, y: 28 },
-  Cirebon:     { x: 66, y: 22 },
-  Purwakarta:  { x: 57, y: 55 },
-  Bekasi:      { x: 76, y: 62 },
-  Jakarta:     { x: 90, y: 52 },
-};
+const SVG_WIDTH = 1000;
+const SVG_HEIGHT = 520;
+const SVG_PADDING_X = 80;
+const SVG_PADDING_Y = 60;
+
+const POSISI_SIMPUL: Record<NodeId, { x: number; y: number }> = (() => {
+  const latitudes = terminals.map((id) => graph[id].lat);
+  const longitudes = terminals.map((id) => graph[id].lon);
+  const minLat = Math.min(...latitudes);
+  const maxLat = Math.max(...latitudes);
+  const minLon = Math.min(...longitudes);
+  const maxLon = Math.max(...longitudes);
+  const lonRange = Math.max(maxLon - minLon, 0.0001);
+  const latRange = Math.max(maxLat - minLat, 0.0001);
+
+  return terminals.reduce((positions, id) => {
+    positions[id] = {
+      x: SVG_PADDING_X + ((graph[id].lon - minLon) / lonRange) * (SVG_WIDTH - SVG_PADDING_X * 2),
+      y: SVG_PADDING_Y + ((maxLat - graph[id].lat) / latRange) * (SVG_HEIGHT - SVG_PADDING_Y * 2),
+    };
+    return positions;
+  }, {} as Record<NodeId, { x: number; y: number }>);
+})();
 
 const WARNA_WILAYAH: Record<NodeId, string> = {
   Tasikmalaya: '#7C3AED',
@@ -351,10 +364,10 @@ export default function PetaRutePage() {
                       );
                     })}
 
-                    {/* Simpul (nodes) — inisial 2 huruf */}
+                    {/* Simpul (nodes) — inisial dari nama terminal real */}
                     {terminals.map((id) => {
                       const pos = POSISI_SIMPUL[id as NodeId];
-                      const cx = pos.x * 10, cy = pos.y * 5.2;
+                      const cx = pos.x, cy = pos.y;
                       const warnaWilayah = WARNA_WILAYAH[id as NodeId];
                       const dipilih  = simpulDipilih === id;
                       const diAstar  = jalurAstar.includes(id as NodeId);
@@ -368,7 +381,13 @@ export default function PetaRutePage() {
                         : diUCS ? '#7C3AED'
                         : warnaWilayah;
 
-                      const inisial = (id as string).slice(0, 2).toUpperCase();
+                      const inisial = getTerminalLabel(id as NodeId)
+                        .split(' ')
+                        .filter(Boolean)
+                        .slice(0, 2)
+                        .map((bagian) => bagian[0])
+                        .join('')
+                        .toUpperCase();
 
                       return (
                         <g key={id} style={{ cursor: 'pointer' }}
@@ -387,7 +406,7 @@ export default function PetaRutePage() {
                           </text>
                           <text x={cx} y={cy + 10} textAnchor="middle"
                             fontSize="7" fontWeight="600" fill="rgba(238,238,238,0.85)">
-                            {(id as string).length > 8 ? (id as string).slice(0, 7) + '…' : id}
+                            {getTerminalLabel(id as NodeId)}
                           </text>
                           <rect x={cx - 18} y={cy + 27} width={36} height={13} rx={3}
                             fill="rgba(26,26,26,0.07)" stroke="rgba(26,26,26,0.12)" strokeWidth={0.7} />
@@ -448,10 +467,16 @@ export default function PetaRutePage() {
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl flex items-center justify-center font-extrabold text-sm shrink-0"
                           style={{ background: WARNA_WILAYAH[simpulDipilih!], color: '#EEEEEE' }}>
-                          {(simpulDipilih as string).slice(0, 2).toUpperCase()}
+                          {getTerminalLabel(simpulDipilih as NodeId)
+                            .split(' ')
+                            .filter(Boolean)
+                            .slice(0, 2)
+                            .map((bagian) => bagian[0])
+                            .join('')
+                            .toUpperCase()}
                         </div>
                         <div>
-                          <p className="font-bold text-sm leading-tight" style={{ color: '#1A1A1A' }}>{nodeDipilih.id}</p>
+                          <p className="font-bold text-sm leading-tight" style={{ color: '#1A1A1A' }}>{nodeDipilih.displayName}</p>
                           <p className="text-xs" style={{ color: 'rgba(26,26,26,0.4)' }}>Terminal Bus Antar Kota</p>
                         </div>
                       </div>
@@ -486,7 +511,7 @@ export default function PetaRutePage() {
                             >
                               <div className="flex items-center gap-2">
                                 <MapPin size={11} color="#DB1A1A" />
-                                <span className="text-xs font-semibold" style={{ color: '#1A1A1A' }}>{edge.to}</span>
+                                <span className="text-xs font-semibold" style={{ color: '#1A1A1A' }}>{getTerminalLabel(edge.to)}</span>
                               </div>
                               <span className="text-xs font-bold px-2 py-0.5 rounded-lg"
                                 style={{ background: 'rgba(219,26,26,0.08)', color: '#DB1A1A' }}>
@@ -570,7 +595,7 @@ export default function PetaRutePage() {
                         style={{ color: 'rgba(26,26,26,0.45)', minWidth: 110 }}>Terminal</th>
                       {terminals.map((t) => (
                         <th key={t} className="px-3 py-3 text-center font-bold"
-                          style={{ color: '#DB1A1A', minWidth: 80 }}>{t}</th>
+                          style={{ color: '#DB1A1A', minWidth: 80 }}>{getTerminalLabel(t as NodeId)}</th>
                       ))}
                       <th className="px-3 py-3 text-center font-bold"
                         style={{ color: 'rgba(26,26,26,0.4)', minWidth: 60 }}>h(n)</th>
@@ -599,7 +624,7 @@ export default function PetaRutePage() {
                             <span className="flex items-center gap-2">
                               <span className="w-2 h-2 rounded-full shrink-0"
                                 style={{ background: WARNA_WILAYAH[baris as NodeId] }} />
-                              {baris}
+                              {getTerminalLabel(baris as NodeId)}
                             </span>
                           </td>
                           {terminals.map((kolom) => {

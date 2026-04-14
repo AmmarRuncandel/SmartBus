@@ -1,0 +1,9 @@
+id,displayName,lat,lon,sourceUrl
+Tasikmalaya,Terminal Tipe A Tasikmalaya,-7.2914436,108.1918996,https://nominatim.openstreetmap.org/search?q=Terminal%20Tipe%20A%20Tasikmalaya&format=jsonv2
+Garut,Terminal Guntur Melati,-7.2008382,107.9058988,https://nominatim.openstreetmap.org/search?q=Terminal%20Guntur%20Garut&format=jsonv2
+Bandung,Terminal Leuwipanjang,-6.9457258,107.5942849,https://nominatim.openstreetmap.org/search?q=Terminal%20Leuwipanjang%20Bandung&format=jsonv2
+Sumedang,Terminal Ciakar Sumedang,-6.8257315,107.9214221,https://nominatim.openstreetmap.org/search?q=Terminal%20Sumedang&format=jsonv2
+Cirebon,Terminal Harjamukti,-6.7393184,108.5529847,https://nominatim.openstreetmap.org/search?q=Terminal%20Harjamukti%20Cirebon&format=jsonv2
+Purwakarta,Terminal Purwakarta,-6.5416377,107.3910873,https://nominatim.openstreetmap.org/search?q=Terminal%20Purwakarta&format=jsonv2
+Bekasi,Terminal Bus Bekasi,-6.249811,107.0132332,https://nominatim.openstreetmap.org/search?q=Terminal%20Bekasi&format=jsonv2
+Jakarta,Terminal Kampung Rambutan,-6.3107984,106.8837749,https://nominatim.openstreetmap.org/search?q=Terminal%20Kampung%20Rambutan%20Jakarta&format=jsonv2

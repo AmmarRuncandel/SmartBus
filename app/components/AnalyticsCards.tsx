@@ -16,6 +16,7 @@ import {
   Layers,
 } from 'lucide-react';
 import { AlgorithmResult } from '../lib/algorithms';
+import { terminals } from '../lib/graphData';
 
 interface AnalyticsCardsProps {
   astar: AlgorithmResult | null;
@@ -92,7 +93,7 @@ export default function AnalyticsCards({ astar, ucs }: AnalyticsCardsProps) {
   const hasResults = astar && ucs;
   const totalSimpul = hasResults
     ? Math.max(astar.nodesVisited, ucs.nodesVisited)
-    : 8; // jumlah simpul dalam graf
+    : terminals.length;
 
   const lebihCepat = hasResults
     ? astar.executionTime <= ucs.executionTime ? 'astar' : 'ucs'

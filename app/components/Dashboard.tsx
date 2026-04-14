@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { AlgorithmResult, runAStar, runUCS } from '../lib/algorithms';
-import { graph, NodeId, terminals } from '../lib/graphData';
+import { graph, NodeId, terminals, getTerminalLabel } from '../lib/graphData';
 import ControlPanel from './ControlPanel';
 import VisualizationPanel from './VisualizationPanel';
 import AnalyticsCards from './AnalyticsCards';
@@ -132,7 +132,7 @@ export default function Dashboard() {
                           : '#1A1A1A',
                     }}
                   >
-                    {t}
+                    {getTerminalLabel(t)}
                   </span>
                 ))}
               </div>

@@ -2,7 +2,7 @@
 
 import { Bus, ChevronRight, AlertCircle, Navigation } from 'lucide-react';
 import { AlgorithmResult } from '../lib/algorithms';
-import { NodeId } from '../lib/graphData';
+import { NodeId, graph } from '../lib/graphData';
 
 interface VisualizationPanelProps {
   astar: AlgorithmResult | null;
@@ -152,7 +152,7 @@ function TampilJalur({
         {result.path.map((node, idx) => (
           <div key={idx} className="flex items-center gap-1.5">
             <BadgeSimpul
-              name={node}
+              name={graph[node].displayName}
               color={color}
               isFirst={idx === 0}
               isLast={idx === result.path.length - 1}
@@ -270,7 +270,7 @@ function LogEkspansi({
               </span>
               <Bus size={11} color={color} />
               <span className="font-semibold" style={{ color: '#1A1A1A' }}>
-                {entry.node}
+                {graph[entry.node as NodeId].displayName}
               </span>
             </div>
             <div className="flex items-center gap-2">

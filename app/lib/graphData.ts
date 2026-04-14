@@ -1,11 +1,11 @@
 /**
  * graphData.ts
  * ------------
- * Defines the inter-city bus terminal graph for West Java & Jakarta.
- * Each edge contains a `cost` value representing distance/toll cost (in km equivalent).
- * Each node also carries a heuristic `h` value – the straight-line distance
- * estimate to Jakarta (the common goal node), used by the A* algorithm.
+ * Graph builder that reads the real SmartBus dataset from a separate JSON file.
+ * The dataset stores terminal locations, road distances, and the graph topology.
  */
+
+import dataset from './data/smartbus-dataset.json';
 
 export type NodeId =
   | 'Tasikmalaya'
@@ -19,12 +19,15 @@ export type NodeId =
 
 export interface Edge {
   to: NodeId;
-  /** Cost in km (distance + toll proxy) */
+  /** Road-distance cost in km */
   cost: number;
 }
 
 export interface GraphNode {
   id: NodeId;
+  displayName: string;
+  lat: number;
+  lon: number;
   /** Straight-line distance estimate to the goal (Jakarta) in km */
   h: number;
   edges: Edge[];
@@ -32,75 +35,75 @@ export interface GraphNode {
 
 export type Graph = Record<NodeId, GraphNode>;
 
-/** All terminal nodes with adjacency list and heuristics */
-export const graph: Graph = {
-  Tasikmalaya: {
-    id: 'Tasikmalaya',
-    h: 280,
-    edges: [
-      { to: 'Garut', cost: 60 },
-      { to: 'Bandung', cost: 130 },
-    ],
-  },
-  Garut: {
-    id: 'Garut',
-    h: 230,
-    edges: [
-      { to: 'Tasikmalaya', cost: 60 },
-      { to: 'Bandung', cost: 70 },
-    ],
-  },
-  Bandung: {
-    id: 'Bandung',
-    h: 160,
-    edges: [
-      { to: 'Garut', cost: 70 },
-      { to: 'Tasikmalaya', cost: 130 },
-      { to: 'Sumedang', cost: 45 },
-      { to: 'Purwakarta', cost: 75 },
-      { to: 'Cirebon', cost: 130 },
-    ],
-  },
-  Sumedang: {
-    id: 'Sumedang',
-    h: 170,
-    edges: [
-      { to: 'Bandung', cost: 45 },
-      { to: 'Cirebon', cost: 100 },
-    ],
-  },
-  Cirebon: {
-    id: 'Cirebon',
-    h: 210,
-    edges: [
-      { to: 'Bandung', cost: 130 },
-      { to: 'Sumedang', cost: 100 },
-      { to: 'Purwakarta', cost: 95 },
-    ],
-  },
-  Purwakarta: {
-    id: 'Purwakarta',
-    h: 80,
-    edges: [
-      { to: 'Bandung', cost: 75 },
-      { to: 'Cirebon', cost: 95 },
-      { to: 'Bekasi', cost: 55 },
-    ],
-  },
-  Bekasi: {
-    id: 'Bekasi',
-    h: 20,
-    edges: [
-      { to: 'Purwakarta', cost: 55 },
-      { to: 'Jakarta', cost: 25 },
-    ],
-  },
-  Jakarta: {
-    id: 'Jakarta',
-    h: 0,
-    edges: [{ to: 'Bekasi', cost: 25 }],
-  },
+type DatasetNode = {
+  id: NodeId;
+  displayName: string;
+  lat: number;
+  lon: number;
+  sourceUrl: string;
 };
+
+type SmartBusDataset = {
+  metadata: {
+    project: string;
+    description: string;
+    sources: {
+      locations: string;
+      roadDistances: string;
+      heuristic: string;
+    };
+  };
+  terminals: DatasetNode[];
+  connections: Record<NodeId, NodeId[]>;
+  roadDistanceKm: Record<NodeId, Partial<Record<NodeId, number>>>;
+};
+
+const smartBusDataset = dataset as SmartBusDataset;
+const terminalProfiles = Object.fromEntries(
+  smartBusDataset.terminals.map((terminal) => [terminal.id, terminal]),
+) as Record<NodeId, DatasetNode>;
+
+function haversineKm(aLat: number, aLon: number, bLat: number, bLon: number): number {
+  const earthRadiusKm = 6371;
+  const toRadians = (value: number) => (value * Math.PI) / 180;
+  const deltaLat = toRadians(bLat - aLat);
+  const deltaLon = toRadians(bLon - aLon);
+  const lat1 = toRadians(aLat);
+  const lat2 = toRadians(bLat);
+
+  const a =
+    Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(deltaLon / 2) * Math.sin(deltaLon / 2);
+  return 2 * earthRadiusKm * Math.asin(Math.sqrt(a));
+}
+
+function estimateHeuristic(from: NodeId): number {
+  const origin = terminalProfiles[from];
+  const destination = terminalProfiles.Jakarta;
+  return Math.round(haversineKm(origin.lat, origin.lon, destination.lat, destination.lon));
+}
+
+function buildGraph(): Graph {
+  return (smartBusDataset.terminals.map((terminal) => terminal.id) as NodeId[]).reduce((accumulator, id) => {
+    const profile = terminalProfiles[id];
+    accumulator[id] = {
+      id,
+      displayName: profile.displayName,
+      lat: profile.lat,
+      lon: profile.lon,
+      h: estimateHeuristic(id),
+      edges: smartBusDataset.connections[id].map((to) => ({
+        to,
+        cost:
+          smartBusDataset.roadDistanceKm[id][to] ??
+          Math.max(1, Math.round(haversineKm(profile.lat, profile.lon, terminalProfiles[to].lat, terminalProfiles[to].lon))),
+      })),
+    };
+    return accumulator;
+  }, {} as Graph);
+}
+
+export const graph: Graph = buildGraph();
 
 /** Ordered list of all terminal names for UI dropdowns */
 export const terminals: NodeId[] = [
@@ -113,3 +116,7 @@ export const terminals: NodeId[] = [
   'Bekasi',
   'Jakarta',
 ];
+
+export function getTerminalLabel(id: NodeId): string {
+  return graph[id].displayName;
+}

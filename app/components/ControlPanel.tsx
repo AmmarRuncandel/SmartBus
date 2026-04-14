@@ -1,7 +1,7 @@
 'use client';
 
 import { MapPin, Play, RotateCcw, ChevronDown } from 'lucide-react';
-import { NodeId, terminals } from '../lib/graphData';
+import { NodeId, graph, terminals } from '../lib/graphData';
 import TerminalSelect from './ControlPanel/TerminalSelect';
 import { ALGORITHM_BADGES } from './ControlPanel/constants';
 
@@ -63,6 +63,7 @@ export default function ControlPanel({
         excludeValue={destination}
         onChange={(v) => onStartChange(v as NodeId)}
         accentColor="#DB1A1A"
+        getOptionLabel={(id) => graph[id as NodeId].displayName}
       />
 
       {/* Pemisah arah */}
@@ -89,6 +90,7 @@ export default function ControlPanel({
         excludeValue={start}
         onChange={(v) => onDestinationChange(v as NodeId)}
         accentColor="#BD114A"
+        getOptionLabel={(id) => graph[id as NodeId].displayName}
       />
 
       {/* Tombol aksi */}

@@ -1,0 +1,89 @@
+{
+  "metadata": {
+    "project": "SmartBus Analytics",
+    "description": "Real terminal-location dataset for West Java and Jakarta bus terminals.",
+    "sources": {
+      "locations": "OpenStreetMap Nominatim",
+      "roadDistances": "OSRM public routing service",
+      "heuristic": "Geographic straight-line distance to Jakarta"
+    }
+  },
+  "terminals": [
+    {
+      "id": "Tasikmalaya",
+      "displayName": "Terminal Tipe A Tasikmalaya",
+      "lat": -7.2914436,
+      "lon": 108.1918996,
+      "sourceUrl": "https://nominatim.openstreetmap.org/search?q=Terminal%20Tipe%20A%20Tasikmalaya&format=jsonv2"
+    },
+    {
+      "id": "Garut",
+      "displayName": "Terminal Guntur Melati",
+      "lat": -7.2008382,
+      "lon": 107.9058988,
+      "sourceUrl": "https://nominatim.openstreetmap.org/search?q=Terminal%20Guntur%20Garut&format=jsonv2"
+    },
+    {
+      "id": "Bandung",
+      "displayName": "Terminal Leuwipanjang",
+      "lat": -6.9457258,
+      "lon": 107.5942849,
+      "sourceUrl": "https://nominatim.openstreetmap.org/search?q=Terminal%20Leuwipanjang%20Bandung&format=jsonv2"
+    },
+    {
+      "id": "Sumedang",
+      "displayName": "Terminal Ciakar Sumedang",
+      "lat": -6.8257315,
+      "lon": 107.9214221,
+      "sourceUrl": "https://nominatim.openstreetmap.org/search?q=Terminal%20Sumedang&format=jsonv2"
+    },
+    {
+      "id": "Cirebon",
+      "displayName": "Terminal Harjamukti",
+      "lat": -6.7393184,
+      "lon": 108.5529847,
+      "sourceUrl": "https://nominatim.openstreetmap.org/search?q=Terminal%20Harjamukti%20Cirebon&format=jsonv2"
+    },
+    {
+      "id": "Purwakarta",
+      "displayName": "Terminal Purwakarta",
+      "lat": -6.5416377,
+      "lon": 107.3910873,
+      "sourceUrl": "https://nominatim.openstreetmap.org/search?q=Terminal%20Purwakarta&format=jsonv2"
+    },
+    {
+      "id": "Bekasi",
+      "displayName": "Terminal Bus Bekasi",
+      "lat": -6.249811,
+      "lon": 107.0132332,
+      "sourceUrl": "https://nominatim.openstreetmap.org/search?q=Terminal%20Bekasi&format=jsonv2"
+    },
+    {
+      "id": "Jakarta",
+      "displayName": "Terminal Kampung Rambutan",
+      "lat": -6.3107984,
+      "lon": 106.8837749,
+      "sourceUrl": "https://nominatim.openstreetmap.org/search?q=Terminal%20Kampung%20Rambutan%20Jakarta&format=jsonv2"
+    }
+  ],
+  "connections": {
+    "Tasikmalaya": ["Garut", "Bandung"],
+    "Garut": ["Tasikmalaya", "Bandung"],
+    "Bandung": ["Garut", "Tasikmalaya", "Sumedang", "Purwakarta", "Cirebon"],
+    "Sumedang": ["Bandung", "Cirebon"],
+    "Cirebon": ["Bandung", "Sumedang", "Purwakarta"],
+    "Purwakarta": ["Bandung", "Cirebon", "Bekasi"],
+    "Bekasi": ["Purwakarta", "Jakarta"],
+    "Jakarta": ["Bekasi"]
+  },
+  "roadDistanceKm": {
+    "Tasikmalaya": { "Garut": 60, "Bandung": 103 },
+    "Garut": { "Tasikmalaya": 60, "Bandung": 63 },
+    "Bandung": { "Tasikmalaya": 103, "Garut": 63, "Sumedang": 48, "Purwakarta": 76, "Cirebon": 129 },
+    "Sumedang": { "Bandung": 48, "Cirebon": 84 },
+    "Cirebon": { "Bandung": 129, "Sumedang": 84, "Purwakarta": 161 },
+    "Purwakarta": { "Bandung": 76, "Cirebon": 161, "Bekasi": 74 },
+    "Bekasi": { "Purwakarta": 74, "Jakarta": 20 },
+    "Jakarta": { "Bekasi": 20 }
+  }
+}
