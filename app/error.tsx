@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import Link from 'next/link';
 import { AlertTriangle, Home, RotateCcw } from 'lucide-react';
 
 /**
@@ -111,7 +112,7 @@ export default function ErrorPage({
               <RotateCcw size={15} />
               Coba Lagi
             </button>
-            <a
+            <Link
               href="/"
               className="flex-1 flex items-center justify-center gap-2 px-5 py-3 rounded-2xl font-semibold text-sm transition-all duration-200 active:scale-95"
               style={{
@@ -122,7 +123,7 @@ export default function ErrorPage({
             >
               <Home size={15} />
               Kembali ke Beranda
-            </a>
+            </Link>
           </div>
         </div>
       </div>

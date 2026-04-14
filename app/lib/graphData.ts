@@ -80,7 +80,7 @@ function haversineKm(aLat: number, aLon: number, bLat: number, bLon: number): nu
 function estimateHeuristic(from: NodeId): number {
   const origin = terminalProfiles[from];
   const destination = terminalProfiles.Jakarta;
-  return Math.round(haversineKm(origin.lat, origin.lon, destination.lat, destination.lon));
+  return Math.floor(haversineKm(origin.lat, origin.lon, destination.lat, destination.lon));
 }
 
 function buildGraph(): Graph {

@@ -3,9 +3,11 @@
 import { useState, useCallback, useEffect } from 'react';
 import { AlgorithmResult, runAStar, runUCS } from '../lib/algorithms';
 import { graph, NodeId, terminals, getTerminalLabel } from '../lib/graphData';
+import { benchmarkAlgorithm, BenchmarkResult } from '../lib/benchmark';
 import ControlPanel from './ControlPanel';
 import VisualizationPanel from './VisualizationPanel';
 import AnalyticsCards from './AnalyticsCards';
+import BenchmarkSummary from './BenchmarkSummary';
 import ScrollReveal from './ui/ScrollReveal';
 import DashboardSkeleton from './dashboard/DashboardSkeleton';
 
@@ -14,11 +16,19 @@ interface HasilSimulasi {
   ucs: AlgorithmResult;
 }
 
+interface HasilBenchmark {
+  astar: BenchmarkResult;
+  ucs: BenchmarkResult;
+  runs: number;
+}
+
 export default function Dashboard() {
   const [start, setStart] = useState<NodeId>('Tasikmalaya');
   const [destination, setDestination] = useState<NodeId>('Jakarta');
   const [hasil, setHasil] = useState<HasilSimulasi | null>(null);
+  const [hasilBenchmark, setHasilBenchmark] = useState<HasilBenchmark | null>(null);
   const [sedangBerjalan, setSedangBerjalan] = useState(false);
+  const [sedangBenchmark, setSedangBenchmark] = useState(false);
   const [isBootLoading, setIsBootLoading] = useState(true);
 
   useEffect(() => {
@@ -34,6 +44,7 @@ export default function Dashboard() {
 
     setSedangBerjalan(true);
     setHasil(null);
+    setHasilBenchmark(null);
 
     // Jeda singkat agar animasi loading terlihat
     await new Promise((r) => setTimeout(r, 300));
@@ -45,8 +56,26 @@ export default function Dashboard() {
     setSedangBerjalan(false);
   }, [start, destination]);
 
+  const jalankanBenchmark = useCallback(async () => {
+    if (start === destination) return;
+
+    setSedangBenchmark(true);
+    setHasil(null);
+    setHasilBenchmark(null);
+
+    await new Promise((resolve) => setTimeout(resolve, 150));
+
+    const runs = 25;
+    const astar = benchmarkAlgorithm(() => runAStar(graph, start, destination), runs);
+    const ucs = benchmarkAlgorithm(() => runUCS(graph, start, destination), runs);
+
+    setHasilBenchmark({ astar, ucs, runs });
+    setSedangBenchmark(false);
+  }, [start, destination]);
+
   const aturUlang = useCallback(() => {
     setHasil(null);
+    setHasilBenchmark(null);
     setStart('Tasikmalaya');
     setDestination('Jakarta');
   }, []);
@@ -91,9 +120,11 @@ export default function Dashboard() {
               start={start}
               destination={destination}
               isLoading={sedangBerjalan}
+              isBenchmarking={sedangBenchmark}
               onStartChange={setStart}
               onDestinationChange={setDestination}
               onRun={jalankanSimulasi}
+              onBenchmark={jalankanBenchmark}
               onReset={aturUlang}
             />
           </ScrollReveal>
@@ -185,6 +216,12 @@ export default function Dashboard() {
               />
             </div>
           </ScrollReveal>
+
+          {hasilBenchmark && (
+            <ScrollReveal delayMs={180}>
+              <BenchmarkSummary astar={hasilBenchmark.astar} ucs={hasilBenchmark.ucs} />
+            </ScrollReveal>
+          )}
         </div>
       </div>
       )}

@@ -87,6 +87,14 @@ Dengan membandingkan A* vs UCS pada data graf yang sama, proyek ini bisa menunju
 - dampak terhadap ukuran frontier (memori),
 - dan konsekuensi komputasi pada skenario graf kecil-menengah.
 
+### Hasil Pengamatan Formal
+
+Berdasarkan hasil simulasi pada dataset SmartBus, A* dan UCS dapat menghasilkan jalur optimal dengan total biaya yang sama, tetapi urutan simpul yang dikunjungi tidak selalu identik. Hal ini terjadi karena kedua algoritma memiliki tujuan yang sama, yaitu menemukan jalur berbiaya minimum pada graf berbobot non-negatif. Namun, mekanisme penelusurannya berbeda.
+
+UCS memilih simpul murni berdasarkan biaya akumulatif terendah dari titik awal, sehingga proses ekspansi cenderung menyebar ke beberapa cabang yang masih mungkin menghasilkan jalur murah. Sebaliknya, A* menggunakan fungsi evaluasi `f(n) = g(n) + h(n)`, sehingga pencariannya lebih terarah menuju tujuan dengan mempertimbangkan estimasi sisa biaya. Akibatnya, A* sering kali mengekspansi simpul lebih sedikit atau dalam urutan yang berbeda, meskipun jalur akhirnya tetap sama dengan UCS.
+
+Dengan demikian, perbedaan utama antara A* dan UCS pada proyek ini bukan terletak pada kualitas jalur akhir, melainkan pada efisiensi proses pencarian. Jalur optimal yang sama menunjukkan bahwa heuristik A* yang digunakan tetap konsisten terhadap tujuan optimasi, sedangkan perbedaan urutan kunjungan mencerminkan pengaruh heuristik terhadap strategi eksplorasi.
+
 ## Arsitektur Aplikasi
 
 Arsitektur mengikuti Next.js App Router dengan pemisahan sederhana antara UI, logika algoritma, dan data graf.
@@ -110,6 +118,7 @@ Arsitektur mengikuti Next.js App Router dengan pemisahan sederhana antara UI, lo
 - Dashboard simulasi interaktif.
 - Pemilihan terminal asal dan tujuan.
 - Eksekusi A* dan UCS secara berdampingan.
+- Mode benchmark multi-run untuk menampilkan median, deviasi standar, mean, dan rentang waktu eksekusi.
 - Visualisasi jalur terbaik per algoritma.
 - Log urutan ekspansi simpul.
 - Kartu analitik (waktu, biaya, simpul dievaluasi, puncak antrian).
@@ -122,14 +131,15 @@ Arsitektur mengikuti Next.js App Router dengan pemisahan sederhana antara UI, lo
 2. Pilih terminal asal dan terminal tujuan.
 3. Klik tombol "Jalankan Simulasi".
 4. Sistem menghitung hasil dengan A* dan UCS pada graf yang sama.
-5. Aplikasi menampilkan:
+5. Jika mode benchmark dipilih, sistem menjalankan simulasi berulang dan merangkum median, deviasi standar, mean, serta rentang waktu eksekusi.
+6. Aplikasi menampilkan:
 	 - jalur optimal,
 	 - total biaya/jarak,
 	 - waktu eksekusi,
 	 - jumlah simpul dievaluasi,
 	 - urutan ekspansi simpul,
 	 - puncak ukuran antrian prioritas.
-6. Pengguna dapat membuka halaman Peta Rute untuk melihat sorotan jalur pada graf SVG.
+7. Pengguna dapat membuka halaman Peta Rute untuk melihat sorotan jalur pada graf SVG.
 
 ## Detail Algoritma
 
@@ -249,6 +259,20 @@ npm run lint
 - Koordinat terminal diambil dari OpenStreetMap/Nominatim.
 - Biaya edge diambil dari jarak rute jalan nyata melalui OSRM public routing service, bukan data lalu lintas real-time.
 - Tujuan utama proyek adalah dokumentasi dan eksperimen perilaku algoritma.
+
+## Pengujian Otomatis
+
+Proyek ini sekarang memiliki unit test untuk:
+
+- memverifikasi heuristik A* tetap admissible dan consistent,
+- membandingkan hasil A* dan UCS,
+- serta menguji statistik benchmark multi-run.
+
+Jalankan dengan:
+
+```bash
+npm test
+```
 
 ## Kesimpulan Singkat
 

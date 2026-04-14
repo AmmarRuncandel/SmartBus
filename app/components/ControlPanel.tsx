@@ -9,9 +9,11 @@ interface ControlPanelProps {
   start: NodeId;
   destination: NodeId;
   isLoading: boolean;
+  isBenchmarking?: boolean;
   onStartChange: (val: NodeId) => void;
   onDestinationChange: (val: NodeId) => void;
   onRun: () => void;
+  onBenchmark?: () => void;
   onReset: () => void;
 }
 
@@ -19,9 +21,11 @@ export default function ControlPanel({
   start,
   destination,
   isLoading,
+  isBenchmarking = false,
   onStartChange,
   onDestinationChange,
   onRun,
+  onBenchmark,
   onReset,
 }: ControlPanelProps) {
   return (
@@ -98,7 +102,7 @@ export default function ControlPanel({
         <button
           id="run-simulation-btn"
           onClick={onRun}
-          disabled={isLoading}
+          disabled={isLoading || isBenchmarking}
           className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl font-bold text-[13px] leading-tight transition-all duration-200 active:scale-95"
           style={{
             background: isLoading
@@ -106,7 +110,7 @@ export default function ControlPanel({
               : 'linear-gradient(135deg, #DB1A1A, #BD114A)',
             color: '#EEEEEE',
             boxShadow: isLoading ? 'none' : '0 4px 16px rgba(219,26,26,0.35)',
-            cursor: isLoading ? 'not-allowed' : 'pointer',
+            cursor: isLoading || isBenchmarking ? 'not-allowed' : 'pointer',
           }}
         >
           {isLoading ? (
@@ -126,17 +130,43 @@ export default function ControlPanel({
         <button
           id="reset-btn"
           onClick={onReset}
+          disabled={isLoading || isBenchmarking}
           className="flex items-center justify-center gap-1 px-3 py-2.5 rounded-xl text-[13px] font-semibold leading-tight transition-all duration-200 active:scale-95"
           style={{
             background: 'rgba(26,26,26,0.07)',
             color: '#1A1A1A',
             border: '1px solid rgba(26,26,26,0.12)',
+            cursor: isLoading || isBenchmarking ? 'not-allowed' : 'pointer',
           }}
         >
           <RotateCcw size={12} />
           Atur Ulang
         </button>
       </div>
+
+      <button
+        id="benchmark-simulation-btn"
+        onClick={onBenchmark}
+        disabled={isLoading || isBenchmarking || !onBenchmark}
+        className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-semibold leading-tight transition-all duration-200 active:scale-95"
+        style={{
+          background: 'rgba(26,26,26,0.04)',
+          color: '#1A1A1A',
+          border: '1px dashed rgba(26,26,26,0.18)',
+          cursor: isLoading || isBenchmarking || !onBenchmark ? 'not-allowed' : 'pointer',
+        }}
+      >
+        {isBenchmarking ? (
+          <span
+            className="w-3.5 h-3.5 border-2 rounded-full animate-spin"
+            style={{
+              borderColor: 'rgba(26,26,26,0.25)',
+              borderTopColor: '#DB1A1A',
+            }}
+          />
+        ) : null}
+        {isBenchmarking ? 'Benchmarking...' : 'Benchmark 25x'}
+      </button>
 
       {/* Keterangan rumus algoritma */}
       <div className="grid grid-cols-2 gap-2 pt-1">
