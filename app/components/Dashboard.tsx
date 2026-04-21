@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { AlgorithmResult, runAStar, runUCS } from '../lib/algorithms';
+import { AlgorithmResult, runAStar, runHybridAStarUCS, runUCS } from '../lib/algorithms';
 import { graph, NodeId, terminals, getTerminalLabel } from '../lib/graphData';
-import { benchmarkAlgorithm, BenchmarkResult } from '../lib/benchmark';
+import { benchmarkAlgorithm, BenchmarkResult, formatDuration } from '../lib/benchmark';
 import ControlPanel from './ControlPanel';
 import VisualizationPanel from './VisualizationPanel';
 import AnalyticsCards from './AnalyticsCards';
@@ -25,9 +25,10 @@ interface HasilBenchmark {
 export default function Dashboard() {
   const [start, setStart] = useState<NodeId>('Tasikmalaya');
   const [destination, setDestination] = useState<NodeId>('Jakarta');
-  const [visualizationMode, setVisualizationMode] = useState<'comparison' | 'merged'>('comparison');
+  const [simulationMode, setSimulationMode] = useState<'comparison' | 'hybrid'>('comparison');
   const [benchmarkRuns, setBenchmarkRuns] = useState(25);
   const [hasil, setHasil] = useState<HasilSimulasi | null>(null);
+  const [hasilHybrid, setHasilHybrid] = useState<AlgorithmResult | null>(null);
   const [hasilBenchmark, setHasilBenchmark] = useState<HasilBenchmark | null>(null);
   const [sedangBerjalan, setSedangBerjalan] = useState(false);
   const [sedangBenchmark, setSedangBenchmark] = useState(false);
@@ -46,23 +47,33 @@ export default function Dashboard() {
 
     setSedangBerjalan(true);
     setHasil(null);
+    setHasilHybrid(null);
 
     // Jeda singkat agar animasi loading terlihat
     await new Promise((r) => setTimeout(r, 300));
 
-    // Warm-up ringan untuk mengurangi bias JIT pada pengukuran satu kali run
-    runAStar(graph, start, destination);
-    runUCS(graph, start, destination);
+    if (simulationMode === 'comparison') {
+      // Warm-up ringan untuk mengurangi bias JIT pada pengukuran satu kali run
+      runAStar(graph, start, destination);
+      runUCS(graph, start, destination);
 
-    const astar = runAStar(graph, start, destination);
-    const ucs = runUCS(graph, start, destination);
+      const astar = runAStar(graph, start, destination);
+      const ucs = runUCS(graph, start, destination);
+      setHasil({ astar, ucs });
+      setHasilHybrid(null);
+    } else {
+      runHybridAStarUCS(graph, start, destination);
+      const hybrid = runHybridAStarUCS(graph, start, destination);
+      setHasilHybrid(hybrid);
+      setHasil(null);
+      setHasilBenchmark(null);
+    }
 
-    setHasil({ astar, ucs });
     setSedangBerjalan(false);
-  }, [start, destination]);
+  }, [destination, simulationMode, start]);
 
   const jalankanBenchmark = useCallback(async () => {
-    if (start === destination) return;
+    if (start === destination || simulationMode !== 'comparison') return;
 
     setSedangBenchmark(true);
     setHasilBenchmark(null);
@@ -74,10 +85,11 @@ export default function Dashboard() {
 
     setHasilBenchmark({ astar, ucs, runs: benchmarkRuns });
     setSedangBenchmark(false);
-  }, [benchmarkRuns, start, destination]);
+  }, [benchmarkRuns, destination, simulationMode, start]);
 
   const aturUlang = useCallback(() => {
     setHasil(null);
+    setHasilHybrid(null);
     setHasilBenchmark(null);
     setStart('Tasikmalaya');
     setDestination('Jakarta');
@@ -122,13 +134,13 @@ export default function Dashboard() {
             <ControlPanel
               start={start}
               destination={destination}
-              visualizationMode={visualizationMode}
+              simulationMode={simulationMode}
               isLoading={sedangBerjalan}
               isBenchmarking={sedangBenchmark}
               benchmarkRuns={benchmarkRuns}
               onStartChange={setStart}
               onDestinationChange={setDestination}
-              onVisualizationModeChange={setVisualizationMode}
+              onSimulationModeChange={setSimulationMode}
               onRun={jalankanSimulasi}
               onBenchmark={jalankanBenchmark}
               onBenchmarkRunsChange={setBenchmarkRuns}
@@ -201,31 +213,37 @@ export default function Dashboard() {
               <VisualizationPanel
                 astar={hasil?.astar ?? null}
                 ucs={hasil?.ucs ?? null}
+                hybrid={hasilHybrid}
                 start={start}
                 destination={destination}
-                mode={visualizationMode}
+                mode={simulationMode}
               />
             </div>
           </ScrollReveal>
 
-          {/* Kartu analitik */}
-          <ScrollReveal delayMs={140}>
-            <div
-              className="rounded-2xl p-6"
-              style={{
-                background: '#EEEEEE',
-                border: '1px solid rgba(26,26,26,0.09)',
-                boxShadow: '0 4px 24px rgba(26,26,26,0.09)',
-              }}
-            >
-              <AnalyticsCards
-                astar={hasil?.astar ?? null}
-                ucs={hasil?.ucs ?? null}
-              />
-            </div>
-          </ScrollReveal>
+          {simulationMode === 'comparison' ? (
+            <ScrollReveal delayMs={140}>
+              <div
+                className="rounded-2xl p-6"
+                style={{
+                  background: '#EEEEEE',
+                  border: '1px solid rgba(26,26,26,0.09)',
+                  boxShadow: '0 4px 24px rgba(26,26,26,0.09)',
+                }}
+              >
+                <AnalyticsCards
+                  astar={hasil?.astar ?? null}
+                  ucs={hasil?.ucs ?? null}
+                />
+              </div>
+            </ScrollReveal>
+          ) : (
+            <ScrollReveal delayMs={140}>
+              <HybridSummaryCard hybrid={hasilHybrid} />
+            </ScrollReveal>
+          )}
 
-          {hasilBenchmark && (
+          {simulationMode === 'comparison' && hasilBenchmark && (
             <ScrollReveal delayMs={180}>
               <BenchmarkSummary astar={hasilBenchmark.astar} ucs={hasilBenchmark.ucs} />
             </ScrollReveal>
@@ -234,6 +252,55 @@ export default function Dashboard() {
       </div>
       )}
     </main>
+  );
+}
+
+function HybridSummaryCard({ hybrid }: { hybrid: AlgorithmResult | null }) {
+  return (
+    <section
+      className="rounded-2xl p-6"
+      style={{
+        background: '#EEEEEE',
+        border: '1px solid rgba(26,26,26,0.09)',
+        boxShadow: '0 4px 24px rgba(26,26,26,0.09)',
+      }}
+    >
+      <h3 className="text-sm font-bold" style={{ color: '#1A1A1A' }}>
+        Ringkasan Hybrid A*-UCS
+      </h3>
+      <p className="text-xs mt-1" style={{ color: 'rgba(26,26,26,0.5)' }}>
+        Satu pipeline pencarian dengan prioritas adaptif g + alpha*h.
+      </p>
+
+      {hybrid ? (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
+          <MiniMetric label="Biaya Rute" value={`${hybrid.totalCost} km`} />
+          <MiniMetric label="Simpul Dievaluasi" value={`${hybrid.nodesVisited}`} />
+          <MiniMetric label="Puncak Antrian" value={`${hybrid.maxQueueSize}`} />
+          <MiniMetric label="Waktu Eksekusi" value={formatDuration(hybrid.executionTime)} />
+        </div>
+      ) : (
+        <p className="text-xs mt-4" style={{ color: 'rgba(26,26,26,0.45)' }}>
+          Jalankan simulasi untuk melihat metrik hybrid.
+        </p>
+      )}
+    </section>
+  );
+}
+
+function MiniMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div
+      className="rounded-xl p-3"
+      style={{ background: 'rgba(26,26,26,0.04)', border: '1px solid rgba(26,26,26,0.08)' }}
+    >
+      <p className="text-[11px] uppercase tracking-wider font-semibold" style={{ color: 'rgba(26,26,26,0.5)' }}>
+        {label}
+      </p>
+      <p className="text-sm font-bold mt-1" style={{ color: '#1A1A1A' }}>
+        {value}
+      </p>
+    </div>
   );
 }
 

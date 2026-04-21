@@ -1,6 +1,6 @@
 # A. Methodology
 
-Dokumen ini menjelaskan metodologi pengembangan simulasi pencarian rute SmartBus menggunakan A* dan Uniform Cost Search (UCS), serta desain penggabungan visualisasi keduanya.
+Dokumen ini menjelaskan metodologi pengembangan simulasi pencarian rute SmartBus menggunakan A* dan Uniform Cost Search (UCS), termasuk dua skenario: mode komparasi (A* vs UCS) dan mode hybrid (penggabungan kedua pendekatan dalam satu pipeline pencarian).
 
 ## [1] Desain Algoritma
 
@@ -138,19 +138,24 @@ function Benchmark(algorithmRunner, runs, warmupRuns):
 
 ## [3] Hybrid Algoritma Design
 
+Catatan penting: pada proyek ini, hybrid diimplementasikan sebagai **algoritma nyata**, bukan hanya overlay visualisasi.
+
 ### 1. Bagaimana algoritma digabungkan
 
-Penggabungan dilakukan pada level orkestrasi dan visualisasi, bukan mencampur rumus inti pencarian.
+Penggabungan dilakukan dengan menyatukan prinsip prioritas UCS dan A* pada satu fungsi evaluasi adaptif.
 
-- A* dan UCS dieksekusi sebagai dua proses terpisah dengan input graph yang sama.
-- Hasil masing-masing proses disimpan sebagai output independen:
-  - path terbaik
-  - total cost
-  - expansion log
-  - metrik benchmark
-- Mode visualisasi menampilkan dua bentuk:
-  - Mode comparasi: panel A* dan UCS dipisah.
-  - Mode penggabungan: overlay jalur dan timeline sinkron langkah eksplorasi.
+- Rumus hybrid: f_hybrid(n) = g(n) + alpha(n) * h(n).
+- g(n) mewakili komponen UCS (biaya riil dari start).
+- h(n) mewakili komponen A* (heuristic ke goal).
+- alpha(n) bersifat dinamis (adaptive) sesuai progres pencarian.
+- Saat alpha kecil, perilaku mendekati UCS.
+- Saat alpha besar, perilaku mendekati A*.
+
+Dengan demikian, istilah hybrid pada penelitian ini berarti:
+
+- Hybrid-Metode: prinsip UCS dan A* dilebur dalam satu prioritas node adaptif.
+- Hybrid-Visualisasi: keluaran hybrid disajikan sebagai satu jalur final dan satu log ekspansi.
+- Komparasi tetap tersedia sebagai mode terpisah untuk evaluasi.
 
 ### 2. Alur integrasi metode
 
@@ -158,20 +163,28 @@ Alur integrasi:
 
 1. User memilih start dan destination.
 2. Sistem validasi input (start != destination).
-3. Sistem menjalankan A* dan UCS pada graph yang sama.
-4. Sistem menyimpan hasil ke state simulasi.
-5. Visualisasi dirender berdasarkan mode:
-   - comparasi: side-by-side route dan log.
-   - penggabungan: gabungan node jalur + sinkronisasi langkah.
-6. Jika benchmark dijalankan, sistem melakukan warm-up lalu multi-run untuk masing-masing algoritma.
-7. Statistik benchmark ditampilkan untuk analisis performa.
+3. Jika mode = comparasi, sistem menjalankan A* dan UCS secara terpisah.
+4. Jika mode = hybrid, sistem menjalankan algoritma hybrid A*-UCS dalam satu proses pencarian.
+5. Sistem menyimpan hasil sesuai mode aktif.
+6. Visualisasi dirender berdasarkan mode:
+    - comparasi: side-by-side route dan log A* vs UCS.
+    - hybrid: satu route dan satu log dari algoritma gabungan.
+7. Jika benchmark dijalankan (mode comparasi), sistem melakukan warm-up lalu multi-run untuk masing-masing algoritma.
+8. Statistik benchmark ditampilkan untuk analisis performa.
+
+Alur ini menegaskan bahwa sistem memiliki dua kapabilitas sekaligus: komparasi algoritma dan simulasi hybrid yang menyatukan keduanya.
 
 ### 3. Prinsip desain hybrid
 
-- Fairness: kedua algoritma memakai dataset, titik awal, dan tujuan yang identik.
+- Fairness: semua mode memakai dataset, titik awal, dan tujuan yang identik.
 - Reproducibility: benchmark dilakukan berulang untuk mengurangi noise.
 - Explainability: output mencakup jalur final dan jejak ekspansi node.
-- Non-intrusive integration: integrasi tidak mengubah sifat optimalitas algoritma dasar.
+- Safety of optimality: bobot heuristic pada hybrid dibatasi agar tetap konservatif.
+
+Implikasi metodologis:
+
+- Jika hasil jalur akhir sama namun urutan kunjungan berbeda, ini menunjukkan perbedaan strategi eksplorasi tetap terjadi meski biaya akhir sama.
+- Jika performa waktu tidak berbeda signifikan pada graph kecil, hybrid benchmark tetap valid karena fokus utamanya adalah stabilitas metrik dan interpretasi pola eksplorasi.
 
 ### 4. Kelebihan dan batasan
 

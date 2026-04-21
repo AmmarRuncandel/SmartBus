@@ -205,3 +205,86 @@ export function runAStar(
   const executionTime = performance.now() - t0;
   return { path: [], totalCost: Infinity, executionTime, nodesVisited, expansionLog, maxQueueSize };
 }
+
+// ---------------------------------------------------------------------------
+// Hybrid A*-UCS Search
+// ---------------------------------------------------------------------------
+
+/**
+ * Hybrid search that adapts between UCS and A* by scaling heuristic influence.
+ * Priority is computed as: f_hybrid = g + alpha * h, where alpha is dynamic.
+ */
+export function runHybridAStarUCS(
+  graph: Graph,
+  start: NodeId,
+  goal: NodeId
+): AlgorithmResult {
+  const t0 = performance.now();
+
+  const pq = new MinPriorityQueue<{ node: NodeId; path: NodeId[]; gCost: number }>();
+  const startAlpha = computeAdaptiveAlpha(0, graph[start].h, 0, Object.keys(graph).length);
+  pq.enqueue({ node: start, path: [start], gCost: 0 }, 0 + startAlpha * graph[start].h);
+
+  const visited = new Set<NodeId>();
+  const gScores = new Map<NodeId, number>();
+  gScores.set(start, 0);
+
+  const totalNodes = Object.keys(graph).length;
+  const expansionLog: AlgorithmResult['expansionLog'] = [];
+  let nodesVisited = 0;
+  let maxQueueSize = 1;
+
+  while (pq.size > 0) {
+    const item = pq.dequeue()!;
+    const { node, path, gCost } = item.value;
+
+    if (visited.has(node)) continue;
+    visited.add(node);
+    nodesVisited++;
+
+    const h = graph[node].h;
+    const alpha = computeAdaptiveAlpha(gCost, h, visited.size, totalNodes);
+    expansionLog.push({ node, gCost, fCost: gCost + alpha * h });
+
+    if (node === goal) {
+      const executionTime = performance.now() - t0;
+      return { path, totalCost: gCost, executionTime, nodesVisited, expansionLog, maxQueueSize };
+    }
+
+    for (const edge of graph[node].edges) {
+      if (visited.has(edge.to)) continue;
+
+      const newG = gCost + edge.cost;
+      const bestG = gScores.get(edge.to) ?? Infinity;
+      if (newG < bestG) {
+        gScores.set(edge.to, newG);
+        const nextH = graph[edge.to].h;
+        const nextAlpha = computeAdaptiveAlpha(newG, nextH, visited.size, totalNodes);
+        const hybridPriority = newG + nextAlpha * nextH;
+        pq.enqueue({ node: edge.to, path: [...path, edge.to], gCost: newG }, hybridPriority);
+        maxQueueSize = Math.max(maxQueueSize, pq.size);
+      }
+    }
+  }
+
+  const executionTime = performance.now() - t0;
+  return { path: [], totalCost: Infinity, executionTime, nodesVisited, expansionLog, maxQueueSize };
+}
+
+function computeAdaptiveAlpha(
+  gCost: number,
+  heuristic: number,
+  visitedCount: number,
+  totalNodes: number
+): number {
+  const visitedRatio = totalNodes > 0 ? visitedCount / totalNodes : 0;
+  const heuristicShare = heuristic / (heuristic + gCost + 1);
+
+  // Early search favors heuristic guidance, later search trends toward UCS behavior.
+  const alpha = 0.25 + 0.5 * heuristicShare + 0.25 * (1 - visitedRatio);
+  return clamp(alpha, 0.2, 0.95);
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}

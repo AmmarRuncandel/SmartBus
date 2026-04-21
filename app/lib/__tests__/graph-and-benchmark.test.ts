@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { benchmarkAlgorithm, summarizeNumericValues } from '../benchmark';
 import { graph, terminals, type NodeId } from '../graphData';
-import { runAStar, runUCS } from '../algorithms';
+import { runAStar, runHybridAStarUCS, runUCS } from '../algorithms';
 
 function dijkstraToGoal(goal: NodeId) {
   const distances = Object.fromEntries(
@@ -68,6 +68,22 @@ describe('A* and UCS results', () => {
     expect(astar.path[astar.path.length - 1]).toBe(goal);
     expect(astar.nodesVisited).toBeGreaterThan(0);
     expect(ucs.nodesVisited).toBeGreaterThan(0);
+  });
+});
+
+describe('Hybrid A*-UCS results', () => {
+  it('keeps optimal route cost while combining g and h priorities adaptively', () => {
+    const start: NodeId = 'Tasikmalaya';
+    const goal: NodeId = 'Jakarta';
+
+    const hybrid = runHybridAStarUCS(graph, start, goal);
+    const ucs = runUCS(graph, start, goal);
+
+    expect(hybrid.totalCost).toBe(ucs.totalCost);
+    expect(hybrid.path[0]).toBe(start);
+    expect(hybrid.path[hybrid.path.length - 1]).toBe(goal);
+    expect(hybrid.nodesVisited).toBeGreaterThan(0);
+    expect(hybrid.maxQueueSize).toBeGreaterThan(0);
   });
 });
 

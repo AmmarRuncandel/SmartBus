@@ -8,14 +8,14 @@ import { ALGORITHM_BADGES } from './ControlPanel/constants';
 interface ControlPanelProps {
   start: NodeId;
   destination: NodeId;
-  visualizationMode: 'comparison' | 'merged';
+  simulationMode: 'comparison' | 'hybrid';
   isLoading: boolean;
   isBenchmarking?: boolean;
   benchmarkRuns: number;
   benchmarkRunOptions?: number[];
   onStartChange: (val: NodeId) => void;
   onDestinationChange: (val: NodeId) => void;
-  onVisualizationModeChange: (mode: 'comparison' | 'merged') => void;
+  onSimulationModeChange: (mode: 'comparison' | 'hybrid') => void;
   onRun: () => void;
   onBenchmark?: () => void;
   onBenchmarkRunsChange?: (runs: number) => void;
@@ -25,19 +25,21 @@ interface ControlPanelProps {
 export default function ControlPanel({
   start,
   destination,
-  visualizationMode,
+  simulationMode,
   isLoading,
   isBenchmarking = false,
   benchmarkRuns,
   benchmarkRunOptions = [10, 25, 50, 100],
   onStartChange,
   onDestinationChange,
-  onVisualizationModeChange,
+  onSimulationModeChange,
   onRun,
   onBenchmark,
   onBenchmarkRunsChange,
   onReset,
 }: ControlPanelProps) {
+  const benchmarkDisabled = isLoading || isBenchmarking || !onBenchmark || simulationMode !== 'comparison';
+
   return (
     <div
       className="rounded-2xl p-6 flex flex-col gap-5"
@@ -156,17 +158,17 @@ export default function ControlPanel({
 
       <div className="flex flex-col gap-2">
         <label
-          htmlFor="visualization-mode"
+          htmlFor="simulation-mode"
           className="text-[11px] font-semibold uppercase tracking-wider"
           style={{ color: 'rgba(26,26,26,0.45)' }}
         >
-          Mode Visualisasi
+          Mode Simulasi
         </label>
         <select
-          id="visualization-mode"
-          value={visualizationMode}
+          id="simulation-mode"
+          value={simulationMode}
           onChange={(event) =>
-            onVisualizationModeChange(event.target.value as 'comparison' | 'merged')
+            onSimulationModeChange(event.target.value as 'comparison' | 'hybrid')
           }
           disabled={isLoading || isBenchmarking}
           className="w-full rounded-xl px-3 py-2.5 text-sm font-semibold outline-none"
@@ -178,7 +180,7 @@ export default function ControlPanel({
           }}
         >
           <option value="comparison">Comparasi (A* vs UCS)</option>
-          <option value="merged">Penggabungan (Overlay)</option>
+          <option value="hybrid">Hybrid (A* + UCS menyatu)</option>
         </select>
       </div>
 
@@ -194,14 +196,14 @@ export default function ControlPanel({
           id="benchmark-runs"
           value={benchmarkRuns}
           onChange={(event) => onBenchmarkRunsChange?.(Number(event.target.value))}
-          disabled={isLoading || isBenchmarking || !onBenchmarkRunsChange}
+          disabled={isLoading || isBenchmarking || !onBenchmarkRunsChange || simulationMode !== 'comparison'}
           className="w-full rounded-xl px-3 py-2.5 text-sm font-semibold outline-none"
           style={{
             background: 'rgba(26,26,26,0.06)',
             color: '#1A1A1A',
             border: '1px solid rgba(26,26,26,0.16)',
             cursor:
-              isLoading || isBenchmarking || !onBenchmarkRunsChange
+              isLoading || isBenchmarking || !onBenchmarkRunsChange || simulationMode !== 'comparison'
                 ? 'not-allowed'
                 : 'pointer',
           }}
@@ -216,13 +218,13 @@ export default function ControlPanel({
         <button
           id="benchmark-simulation-btn"
           onClick={onBenchmark}
-          disabled={isLoading || isBenchmarking || !onBenchmark}
+          disabled={benchmarkDisabled}
           className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-semibold leading-tight transition-all duration-200 active:scale-95"
           style={{
             background: 'rgba(26,26,26,0.04)',
             color: '#1A1A1A',
             border: '1px dashed rgba(26,26,26,0.18)',
-            cursor: isLoading || isBenchmarking || !onBenchmark ? 'not-allowed' : 'pointer',
+            cursor: benchmarkDisabled ? 'not-allowed' : 'pointer',
           }}
         >
           {isBenchmarking ? (
@@ -234,7 +236,11 @@ export default function ControlPanel({
               }}
             />
           ) : null}
-          {isBenchmarking ? 'Benchmarking...' : `Benchmark ${benchmarkRuns}x`}
+          {isBenchmarking
+            ? 'Benchmarking...'
+            : simulationMode === 'comparison'
+              ? `Benchmark ${benchmarkRuns}x`
+              : 'Benchmark aktif di mode Comparasi'}
         </button>
       </div>
 
