@@ -165,6 +165,7 @@ export default function Dashboard() {
                 ucs={hasil?.ucs ?? null}
                 start={start}
                 destination={destination}
+                mode="comparison"
               />
             </div>
           </ScrollReveal>
