@@ -26,6 +26,7 @@ export default function TerminalSelect({
 }: TerminalSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const listboxId = `${id}-listbox`;
 
   const filteredOptions = useMemo(
     () => options.filter((option) => option !== excludeValue),
@@ -62,10 +63,16 @@ export default function TerminalSelect({
         aria-labelledby={`${id}-label`}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
+        aria-controls={listboxId}
         onClick={() => setIsOpen((prev) => !prev)}
         onKeyDown={(event) => {
           if (event.key === 'Escape') {
             setIsOpen(false);
+          }
+
+          if (event.key === 'ArrowDown' || event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            setIsOpen(true);
           }
         }}
         className="relative w-full h-12 pl-9 pr-9 rounded-2xl text-left text-base font-semibold outline-none"
@@ -94,6 +101,7 @@ export default function TerminalSelect({
 
       {isOpen && (
         <ul
+          id={listboxId}
           role="listbox"
           aria-labelledby={`${id}-label`}
           className="absolute left-0 right-0 top-[calc(100%+6px)] max-h-52 overflow-y-auto rounded-2xl p-1 z-20"

@@ -22,10 +22,21 @@ import ScrollReveal from '../components/ui/ScrollReveal';
 // ---------------------------------------------------------------------------
 // Koordinat simpul dalam kanvas SVG (viewBox 1000x520)
 // ---------------------------------------------------------------------------
-const SVG_WIDTH = 1000;
-const SVG_HEIGHT = 520;
-const SVG_PADDING_X = 80;
-const SVG_PADDING_Y = 60;
+const SVG_WIDTH = 1320;
+const SVG_HEIGHT = 720;
+const SVG_PADDING_X = 120;
+const SVG_PADDING_Y = 88;
+
+const NODE_LAYOUT_OFFSET: Partial<Record<NodeId, { x: number; y: number }>> = {
+  Tasikmalaya: { x: -34, y: 40 },
+  Garut: { x: 60, y: 22 },
+  Bandung: { x: 8, y: -46 },
+  Sumedang: { x: 30, y: 8 },
+  Cirebon: { x: 26, y: -30 },
+  Purwakarta: { x: -24, y: -42 },
+  Bekasi: { x: 74, y: -14 },
+  Jakarta: { x: 30, y: -8 },
+};
 
 const POSISI_SIMPUL: Record<NodeId, { x: number; y: number }> = (() => {
   const latitudes = terminals.map((id) => graph[id].lat);
@@ -38,9 +49,16 @@ const POSISI_SIMPUL: Record<NodeId, { x: number; y: number }> = (() => {
   const latRange = Math.max(maxLat - minLat, 0.0001);
 
   return terminals.reduce((positions, id) => {
+    const manualOffset = NODE_LAYOUT_OFFSET[id] ?? { x: 0, y: 0 };
     positions[id] = {
-      x: SVG_PADDING_X + ((graph[id].lon - minLon) / lonRange) * (SVG_WIDTH - SVG_PADDING_X * 2),
-      y: SVG_PADDING_Y + ((maxLat - graph[id].lat) / latRange) * (SVG_HEIGHT - SVG_PADDING_Y * 2),
+      x:
+        SVG_PADDING_X +
+        ((graph[id].lon - minLon) / lonRange) * (SVG_WIDTH - SVG_PADDING_X * 2) +
+        manualOffset.x,
+      y:
+        SVG_PADDING_Y +
+        ((maxLat - graph[id].lat) / latRange) * (SVG_HEIGHT - SVG_PADDING_Y * 2) +
+        manualOffset.y,
     };
     return positions;
   }, {} as Record<NodeId, { x: number; y: number }>);
@@ -75,6 +93,8 @@ function getSisiUnik() {
 // ---------------------------------------------------------------------------
 export default function PetaRutePage() {
   const [simpulDipilih, setSimpulDipilih] = useState<NodeId | null>(null);
+  const [simpulPulse, setSimpulPulse] = useState<NodeId | null>(null);
+  const [pulseTick, setPulseTick] = useState(0);
   const [asal, setAsal]     = useState<NodeId>('Tasikmalaya');
   const [tujuan, setTujuan] = useState<NodeId>('Jakarta');
   const [jalurAstar, setJalurAstar] = useState<NodeId[]>([]);
@@ -89,6 +109,7 @@ export default function PetaRutePage() {
   }, []);
 
   const sisiSemua = useMemo(() => getSisiUnik(), []);
+  const ruteValid = asal !== tujuan;
 
   const sisiDiSorot = (dari: NodeId, ke: NodeId, jalur: NodeId[]) => {
     for (let i = 0; i < jalur.length - 1; i++) {
@@ -114,6 +135,30 @@ export default function PetaRutePage() {
     setJalurUCS([]);
     setSudahCari(false);
     setSimpulDipilih(null);
+  };
+
+  const pilihSebagaiAsal = (node: NodeId) => {
+    if (node === tujuan) return;
+    setAsal(node);
+    setJalurAstar([]);
+    setJalurUCS([]);
+    setSudahCari(false);
+  };
+
+  const pilihSebagaiTujuan = (node: NodeId) => {
+    if (node === asal) return;
+    setTujuan(node);
+    setJalurAstar([]);
+    setJalurUCS([]);
+    setSudahCari(false);
+  };
+
+  const sorotSimpulSebentar = (node: NodeId) => {
+    setSimpulPulse(node);
+    setPulseTick((value) => value + 1);
+    window.setTimeout(() => {
+      setSimpulPulse((current) => (current === node ? null : current));
+    }, 420);
   };
 
   const nodeDipilih = simpulDipilih ? graph[simpulDipilih] : null;
@@ -232,11 +277,15 @@ export default function PetaRutePage() {
                 <div className="flex gap-2 pb-1">
                   <button
                     onClick={cariJalur}
+                    disabled={!ruteValid}
                     className="flex items-center gap-2 px-5 py-3 rounded-2xl text-sm font-bold transition-all duration-200 active:scale-95"
                     style={{
-                      background: 'linear-gradient(135deg, #DB1A1A, #BD114A)',
+                      background: ruteValid
+                        ? 'linear-gradient(135deg, #DB1A1A, #BD114A)'
+                        : 'rgba(26,26,26,0.18)',
                       color: '#EEEEEE',
-                      boxShadow: '0 4px 16px rgba(219,26,26,0.35)',
+                      boxShadow: ruteValid ? '0 4px 16px rgba(219,26,26,0.35)' : 'none',
+                      cursor: ruteValid ? 'pointer' : 'not-allowed',
                     }}
                   >
                     <GitBranch size={14} /> Sorot Jalur
@@ -252,6 +301,12 @@ export default function PetaRutePage() {
                   )}
                 </div>
               </div>
+
+              {!ruteValid && (
+                <p className="mt-3 text-xs font-medium" style={{ color: '#B45309' }}>
+                  Terminal asal dan tujuan tidak boleh sama.
+                </p>
+              )}
 
               {/* Hasil jalur dengan pop-fade */}
               {sudahCari && (
@@ -295,9 +350,9 @@ export default function PetaRutePage() {
                 </div>
 
                 {/* SVG */}
-                <div className="relative w-full" style={{ paddingBottom: '52%' }}>
+                <div className="relative w-full pb-[66%] sm:pb-[58%] lg:pb-[54%]">
                   <svg
-                    viewBox="0 0 1000 520"
+                    viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
                     className="absolute inset-0 w-full h-full"
                     style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
                   >
@@ -306,14 +361,14 @@ export default function PetaRutePage() {
                         <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(26,26,26,0.035)" strokeWidth="1" />
                       </pattern>
                     </defs>
-                    <rect width="1000" height="520" fill="url(#peta-grid)" />
+                    <rect width={SVG_WIDTH} height={SVG_HEIGHT} fill="url(#peta-grid)" />
 
                     {/* Sisi (edges) — dua garis paralel jika A* dan UCS berbagi sisi */}
                     {sisiSemua.map(({ dari, ke, biaya }) => {
                       const p1 = POSISI_SIMPUL[dari];
                       const p2 = POSISI_SIMPUL[ke];
-                      const x1 = p1.x * 10, y1 = p1.y * 5.2;
-                      const x2 = p2.x * 10, y2 = p2.y * 5.2;
+                      const x1 = p1.x, y1 = p1.y;
+                      const x2 = p2.x, y2 = p2.y;
                       const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
                       const sorotA = sisiDiSorot(dari, ke, jalurAstar);
                       const sorotU = sisiDiSorot(dari, ke, jalurUCS);
@@ -322,6 +377,9 @@ export default function PetaRutePage() {
                       const panjang = Math.sqrt(dx * dx + dy * dy) || 1;
                       const nx = -dy / panjang, ny = dx / panjang;
                       const OFFSET = 5;
+                      const labelOffset = sorotA && sorotU ? 0 : 11;
+                      const lx = mx + nx * labelOffset;
+                      const ly = my + ny * labelOffset;
 
                       if (sorotA && sorotU) {
                         return (
@@ -332,13 +390,13 @@ export default function PetaRutePage() {
                             <line x1={x1 - nx * OFFSET} y1={y1 - ny * OFFSET}
                               x2={x2 - nx * OFFSET} y2={y2 - ny * OFFSET}
                               stroke="#7C3AED" strokeWidth={3} />
-                            <rect x={mx - 18} y={my - 9} width={36} height={17} rx={4}
+                            <rect x={mx - 19} y={my - 9.5} width={38} height={19} rx={5}
                               fill="rgba(238,238,238,0.95)" stroke="rgba(26,26,26,0.12)" strokeWidth={0.8} />
-                            <rect x={mx - 18} y={my - 9} width={18} height={17} rx={4}
+                            <rect x={mx - 19} y={my - 9.5} width={19} height={19} rx={5}
                               fill="#DB1A1A" opacity={0.85} />
-                            <rect x={mx} y={my - 9} width={18} height={17} rx={4}
+                            <rect x={mx} y={my - 9.5} width={19} height={19} rx={5}
                               fill="#7C3AED" opacity={0.85} />
-                            <text x={mx} y={my + 4.5} textAnchor="middle" fontSize="8.5" fontWeight="700" fill="#EEEEEE">
+                            <text x={mx} y={my + 4.8} textAnchor="middle" fontSize="9" fontWeight="700" fill="#EEEEEE">
                               {biaya} km
                             </text>
                           </g>
@@ -353,10 +411,10 @@ export default function PetaRutePage() {
                           <line x1={x1} y1={y1} x2={x2} y2={y2}
                             stroke={warna} strokeWidth={tebal}
                             strokeDasharray={sorotA || sorotU ? undefined : '6 4'} />
-                          <rect x={mx - 17} y={my - 9} width={34} height={17} rx={4}
+                          <rect x={lx - 19} y={ly - 9.5} width={38} height={19} rx={5}
                             fill={sorotA ? '#DB1A1A' : sorotU ? '#7C3AED' : 'rgba(238,238,238,0.92)'}
                             stroke={warna} strokeWidth={0.8} />
-                          <text x={mx} y={my + 4.5} textAnchor="middle" fontSize="9" fontWeight="700"
+                          <text x={lx} y={ly + 4.8} textAnchor="middle" fontSize="9" fontWeight="700"
                             fill={sorotA || sorotU ? '#EEEEEE' : 'rgba(26,26,26,0.7)'}>
                             {biaya} km
                           </text>
@@ -374,6 +432,7 @@ export default function PetaRutePage() {
                       const diUCS    = jalurUCS.includes(id as NodeId);
                       const isAsal   = id === asal && sudahCari;
                       const isTujuan = id === tujuan && sudahCari;
+                      const pentingDiMobile = dipilih || id === asal || id === tujuan;
 
                       const warnaNode = isAsal ? '#DB1A1A'
                         : isTujuan ? '#15803D'
@@ -390,8 +449,28 @@ export default function PetaRutePage() {
                         .toUpperCase();
 
                       return (
-                        <g key={id} style={{ cursor: 'pointer' }}
-                          onClick={() => setSimpulDipilih(dipilih ? null : id as NodeId)}>
+                        <g
+                          key={id}
+                          className="peta-node-group"
+                          data-important={pentingDiMobile ? 'true' : 'false'}
+                          style={{ cursor: 'pointer' }}
+                          onClick={() => {
+                            setSimpulDipilih(dipilih ? null : id as NodeId);
+                            sorotSimpulSebentar(id as NodeId);
+                          }}
+                        >
+                          {simpulPulse === id && (
+                            <circle
+                              key={`pulse-${id}-${pulseTick}`}
+                              cx={cx}
+                              cy={cy}
+                              r={24}
+                              className="peta-node-pulse"
+                              stroke={warnaNode}
+                              fill="none"
+                              strokeWidth={2}
+                            />
+                          )}
                           {dipilih && (
                             <circle cx={cx} cy={cy} r={30} fill={warnaNode} opacity={0.12} />
                           )}
@@ -400,17 +479,33 @@ export default function PetaRutePage() {
                             strokeWidth={dipilih ? 2.5 : 1.5} />
                           <circle cx={cx} cy={cy} r={16} fill="none"
                             stroke="rgba(238,238,238,0.2)" strokeWidth={1} />
-                          <text x={cx} y={cy - 2} textAnchor="middle" dominantBaseline="middle"
-                            fontSize="9" fontWeight="800" fill="#EEEEEE" letterSpacing="0.5">
+                          <text x={cx} y={cy} textAnchor="middle" dominantBaseline="middle"
+                            fontSize="11" fontWeight="900" fill="#EEEEEE" letterSpacing="0.4">
                             {inisial}
                           </text>
-                          <text x={cx} y={cy + 10} textAnchor="middle"
-                            fontSize="7" fontWeight="600" fill="rgba(238,238,238,0.85)">
+                          <text
+                            x={cx}
+                            y={cy - 30}
+                            textAnchor="middle"
+                            className="peta-node-label"
+                            fontSize="9" fontWeight="700" fill="rgba(26,26,26,0.78)">
                             {getTerminalLabel(id as NodeId)}
                           </text>
-                          <rect x={cx - 18} y={cy + 27} width={36} height={13} rx={3}
+                          <rect
+                            x={cx - 18}
+                            y={cy + 30}
+                            width={36}
+                            height={13}
+                            rx={3}
+                            className="peta-node-heuristic-bg"
                             fill="rgba(26,26,26,0.07)" stroke="rgba(26,26,26,0.12)" strokeWidth={0.7} />
-                          <text x={cx} y={cy + 36} textAnchor="middle" fontSize="7.5" fontWeight="600"
+                          <text
+                            x={cx}
+                            y={cy + 39}
+                            textAnchor="middle"
+                            fontSize="7.5"
+                            fontWeight="600"
+                            className="peta-node-heuristic-text"
                             fill="rgba(26,26,26,0.5)">
                             h={graph[id as NodeId].h}
                           </text>
@@ -491,6 +586,41 @@ export default function PetaRutePage() {
                         <p className="text-xs mt-1.5 leading-relaxed" style={{ color: 'rgba(26,26,26,0.45)' }}>
                           Estimasi jarak lurus ke Jakarta. Digunakan A* untuk memperkirakan sisa biaya.
                         </p>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          onClick={() => pilihSebagaiAsal(nodeDipilih.id)}
+                          disabled={nodeDipilih.id === tujuan}
+                          className="px-3 py-2 rounded-xl text-xs font-bold transition-all"
+                          style={{
+                            background:
+                              nodeDipilih.id === tujuan
+                                ? 'rgba(26,26,26,0.08)'
+                                : 'rgba(219,26,26,0.12)',
+                            color: nodeDipilih.id === tujuan ? 'rgba(26,26,26,0.35)' : '#DB1A1A',
+                            border: '1px solid rgba(219,26,26,0.25)',
+                            cursor: nodeDipilih.id === tujuan ? 'not-allowed' : 'pointer',
+                          }}
+                        >
+                          Jadikan Asal
+                        </button>
+                        <button
+                          onClick={() => pilihSebagaiTujuan(nodeDipilih.id)}
+                          disabled={nodeDipilih.id === asal}
+                          className="px-3 py-2 rounded-xl text-xs font-bold transition-all"
+                          style={{
+                            background:
+                              nodeDipilih.id === asal
+                                ? 'rgba(26,26,26,0.08)'
+                                : 'rgba(189,17,74,0.12)',
+                            color: nodeDipilih.id === asal ? 'rgba(26,26,26,0.35)' : '#BD114A',
+                            border: '1px solid rgba(189,17,74,0.25)',
+                            cursor: nodeDipilih.id === asal ? 'not-allowed' : 'pointer',
+                          }}
+                        >
+                          Jadikan Tujuan
+                        </button>
                       </div>
 
                       <div>

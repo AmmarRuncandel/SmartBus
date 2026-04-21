@@ -163,6 +163,7 @@ export default function Dashboard() {
               <VisualizationPanel
                 astar={hasil?.astar ?? null}
                 ucs={hasil?.ucs ?? null}
+                hybrid={null}
                 start={start}
                 destination={destination}
                 mode="comparison"

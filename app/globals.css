@@ -139,6 +139,38 @@ select option {
   }
 }
 
+@keyframes nodePulse {
+  0% {
+    opacity: 0.85;
+    transform: scale(0.92);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.35);
+  }
+}
+
+.peta-node-pulse {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: nodePulse 420ms ease-out forwards;
+}
+
+.peta-node-label {
+  paint-order: stroke;
+  stroke: rgba(238,238,238,0.95);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
+@media (max-width: 640px) {
+  .peta-node-group[data-important='false'] .peta-node-label,
+  .peta-node-group[data-important='false'] .peta-node-heuristic-bg,
+  .peta-node-group[data-important='false'] .peta-node-heuristic-text {
+    display: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .reveal-on-scroll {
     opacity: 1;
@@ -147,6 +179,10 @@ select option {
   }
 
   .skeleton-shimmer {
+    animation: none;
+  }
+
+  .peta-node-pulse {
     animation: none;
   }
 }
